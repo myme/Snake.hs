@@ -59,8 +59,12 @@ readGrid s = do
 readCell :: Char -> Maybe Cell
 readCell = flip lookup chrToCellMap
 
--- showGrid :: Grid -> String
--- showGrid = 
+showGrid :: Grid -> String
+showGrid g = unlines . showLines $ gridCells g
+    where (width, _) = gridDim g
+          showLines [] = []
+          showLines xs = let (l, r) = splitAt width xs
+                         in  map showCell l : showLines r
 
 showCell :: Cell -> Char
 showCell = fromJust . flip lookup cellToChrMap
