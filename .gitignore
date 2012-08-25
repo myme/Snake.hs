@@ -1,3 +1,4 @@
 .*.sw*
 *.hi
 *.o
+/snake
