@@ -1,9 +1,9 @@
 GHC := ghc
 BIN := snake
-SRC := Main.hs Snake.hs
+SRC := $(shell find . -name '*.hs')
 
 $(BIN): $(SRC)
-	$(GHC) -o snake Main.hs
+	$(GHC) -o $@ $^
 
 clean:
-	rm -f $(BIN) *.hi *.o
+	find . -name snake -o -name '*.hi' -o -name '*.o' | xargs rm -fv
