@@ -45,7 +45,7 @@ showCell = fromJust . flip lookup cellToChrMap
 readGrid :: String -> Maybe Grid
 readGrid "" = Nothing
 readGrid s  = do
-    let ls     = lines s
+    let ls     = filter (not . null) . lines $ s
         width  = length . head $ ls
         height = length ls
     guard $ all ((== width) . length) ls
