@@ -2,15 +2,19 @@ module Snake where
 
 import Control.Monad (guard)
 import Data.Maybe (fromJust)
+import Data.Tuple (swap)
 import Prelude hiding (Either(..))
+import System.Random
 
 data Grid = Grid
-          { gridDim :: (Int, Int)
+          { gridDim :: Dimension
           , gridCells :: [Cell]
-          } deriving (Show)
+          }
+
+type Dimension = (Int, Int) -- ^ (width, height)
 
 data Cell = Empty | Wall | Apple | SnakePart
-          deriving (Show, Eq)
+          deriving (Eq)
 
 data Snake = Snake
            { snakeDir :: Direction
@@ -22,42 +26,11 @@ data Direction = Up | Down | Left | Right
 
 type Coord = (Int, Int) -- ^ (y, x)
 
-chrToCellMap :: [(Char, Cell)]
-chrToCellMap = [ (' ', Empty)
-               , ('#', Wall)
-               , ('@', Apple)
-               , ('o', SnakePart)
-               ]
+instance Show Grid where
+    show = showGrid
 
-cellToChrMap :: [(Cell, Char)]
-cellToChrMap = [(y, x) | (x, y) <- chrToCellMap]
-
-gridString :: String
-gridString = unlines [ "################################"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "#                              #"
-                     , "################################"
-                     ]
-
-readGrid :: String -> Maybe Grid
-readGrid s = do
-    let ls     = lines s
-        width  = length . head $ ls
-        height = length ls
-    guard $ all ((== width) . length) ls
-    cells <- sequence . concatMap (map readCell) $ ls
-    return $ Grid (width, height) cells
-
-readCell :: Char -> Maybe Cell
-readCell = flip lookup chrToCellMap
+instance Show Cell where
+    show c = showCell c : ""
 
 showGrid :: Grid -> String
 showGrid g = unlines . showLines $ gridCells g
@@ -69,11 +42,66 @@ showGrid g = unlines . showLines $ gridCells g
 showCell :: Cell -> Char
 showCell = fromJust . flip lookup cellToChrMap
 
+readGrid :: String -> Maybe Grid
+readGrid "" = Nothing
+readGrid s  = do
+    let ls     = lines s
+        width  = length . head $ ls
+        height = length ls
+    guard $ all ((== width) . length) ls
+    cells <- sequence . concatMap (map readCell) $ ls
+    return $ Grid (width, height) cells
+
+readCell :: Char -> Maybe Cell
+readCell = flip lookup chrToCellMap
+
+chrToCellMap :: [(Char, Cell)]
+chrToCellMap = [ (' ', Empty)
+               , ('#', Wall)
+               , ('@', Apple)
+               , ('o', SnakePart)
+               ]
+
+cellToChrMap :: [(Cell, Char)]
+cellToChrMap = map swap chrToCellMap
+
+gridString :: String
+gridString = unlines [ "################################"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "#                              #"
+                     , "################################"
+                     ]
+
+enumerateCells :: Grid -> [(Coord, Cell)]
+enumerateCells g = zip coords $ gridCells g
+    where (width, height) = gridDim g
+          coords = [(y, x) | y <- [0 .. height - 1], x <- [0 .. width - 1]]
+
+emptyCoords :: Grid -> [Coord]
+emptyCoords = map fst . filter ((== Empty) . snd) . enumerateCells
+
+placeApple :: (RandomGen g) => Grid -> g -> (Grid, g)
+placeApple g r = (setCell coord Apple g, r')
+    where coord     = empty !! idx
+          (idx, r') = randomR (0, length empty) r
+          empty     = emptyCoords g
+
+setCell :: Coord -> Cell -> Grid -> Grid
+setCell c v g = g { gridCells = cells }
+    where cells = map f (enumerateCells g)
+          f (c', v') = if c == c' then v else v'
+
 initialGrid :: Grid
 initialGrid = fromJust $ readGrid gridString
 
 initialSnake :: Snake
-initialSnake = Snake Right [(0, 0), (0, 1), (0, 2)]
+initialSnake = Snake Right [(1, 2), (1, 1), (1, 0)]
 
 snakeLength :: Snake -> Int
 snakeLength = length . snakeBody
