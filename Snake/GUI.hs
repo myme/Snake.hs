@@ -4,10 +4,13 @@ import Snake.Core
 
 import Graphics.UI.WX
 
+
 -- | Start the main GUI
 startGUI :: SnakeConfig -> IO ()
 startGUI config = start $ gui config
 
+-- | Constants defining the pixel width of each square
+-- on the grid.
 squareWidth, squareHeight :: Int
 squareWidth  = 10
 squareHeight = 10
@@ -41,10 +44,12 @@ gui config = do
 
     return ()
 
--- | Paint the main panel
+-- | Paint the main panel.
 paintMainPanel :: Grid -> DC a -> Rect -> IO ()
 paintMainPanel g dc _ = mapM_ (paintCell dc) $ enumerateCells g
 
+
+-- | Paints an individual cell on the grid.
 paintCell :: DC a -> (Coord, Cell) -> IO ()
 paintCell dc ((y, x), cell) = paintCell' cell
     where coord = (y*squareHeight, x*squareWidth)
@@ -53,6 +58,8 @@ paintCell dc ((y, x), cell) = paintCell' cell
           paintCell' Apple     = paintApple dc coord
           paintCell' SnakePart = paintSnakePart dc coord
 
+
+-- | Paints a wall segment on the grid.
 paintWallSegment :: DC a -> Coord -> IO ()
 paintWallSegment dc coord = do
     let (y, x) = coord
@@ -64,6 +71,8 @@ paintWallSegment dc coord = do
     -- putStrLn $ "Painted wall: " ++ show coord
     return ()
 
+
+-- | Paints an apple on the grid.
 paintApple :: DC a -> Coord -> IO ()
 paintApple dc coord = do
     let (y, x) = coord
@@ -75,6 +84,8 @@ paintApple dc coord = do
     -- putStrLn $ "Painted Apple: " ++ show coord
     return ()
 
+
+-- | Paints a part of the snake on the grid.
 paintSnakePart :: DC a -> Coord -> IO ()
 paintSnakePart dc coord = do
     let (y, x) = coord
