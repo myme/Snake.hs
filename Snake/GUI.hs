@@ -38,15 +38,17 @@ paintMainPanel :: Grid -> DC a -> Rect -> IO ()
 paintMainPanel g dc _ = mapM_ (paintCell dc) $ enumerateCells g
 
 paintCell :: DC a -> (Coord, Cell) -> IO ()
-paintCell _  (_,     Empty)     = return ()
-paintCell dc (coord, Wall)      = paintWallSegment dc coord
-paintCell dc (coord, Apple)     = paintApple dc coord
-paintCell dc (coord, SnakePart) = paintSnakePart dc coord
+paintCell dc ((y, x), cell) = paintCell' cell
+    where coord = (y*10, x*10)
+          paintCell' Empty     = return ()
+          paintCell' Wall      = paintWallSegment dc coord
+          paintCell' Apple     = paintApple dc coord
+          paintCell' SnakePart = paintSnakePart dc coord
 
 paintWallSegment :: DC a -> Coord -> IO ()
 paintWallSegment dc coord = do
     let (y, x) = coord
-        r = rect (point (x*10) (y*10)) (sz 10 10)
+        r = rect (point x y) (sz 10 10)
 
     set dc [brushColor := black, brushKind := BrushSolid]
     drawRect dc r []
@@ -57,7 +59,7 @@ paintWallSegment dc coord = do
 paintApple :: DC a -> Coord -> IO ()
 paintApple dc coord = do
     let (y, x) = coord
-        r = rect (point (x*10) (y*10)) (sz 10 10)
+        r = rect (point x y) (sz 10 10)
 
     set dc [brushColor := red, brushKind := BrushSolid]
     drawRect dc r []
@@ -68,7 +70,7 @@ paintApple dc coord = do
 paintSnakePart :: DC a -> Coord -> IO ()
 paintSnakePart dc coord = do
     let (y, x) = coord
-        r = rect (point (x*10) (y*10)) (sz 10 10)
+        r = rect (point x y) (sz 10 10)
 
     set dc [brushColor := green, brushKind := BrushSolid]
     drawRect dc r []
