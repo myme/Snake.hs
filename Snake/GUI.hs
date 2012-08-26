@@ -9,7 +9,7 @@ import Prelude hiding (Either(..))
 
 -- | Start the main GUI
 startGUI :: SnakeConfig -> IO ()
-startGUI config = start $ gui config "lvl1.txt"
+startGUI config = start $ gui config "levels/lvl1.txt"
 
 
 -- | Constant defining the update interval
