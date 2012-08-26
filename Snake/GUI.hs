@@ -16,7 +16,7 @@ gridHeight = 400
 gui :: SnakeConfig -> IO ()
 gui config = do
     let gen    = randomGen config
-        (g, _) = placeApple initialGrid gen
+        (g, _) = placeApple (placeSnake initialSnake initialGrid) gen
 
     mainFrame <- frameFixed [text := "Snake"]
     gridPanel <- panel mainFrame [on paint := paintMainPanel g]

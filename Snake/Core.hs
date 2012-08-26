@@ -111,6 +111,9 @@ placeApple g r = (setCell coord Apple g, r')
           (idx, r') = randomR (0, length empty) r
           empty     = emptyCoords g
 
+placeSnake :: Snake -> Grid -> Grid
+placeSnake s g = foldr (`setCell` SnakePart) g $ snakeBody s
+
 setCell :: Coord -> Cell -> Grid -> Grid
 setCell c v g = g { gridCells = cells }
     where cells = map f (enumerateCells g)
@@ -120,7 +123,7 @@ initialGrid :: Grid
 initialGrid = fromJust $ readGrid gridString
 
 initialSnake :: Snake
-initialSnake = Snake Right [(1, 2), (1, 1), (1, 0)]
+initialSnake = Snake Right [(2, 4), (2, 3), (2, 2)]
 
 snakeLength :: Snake -> Int
 snakeLength = length . snakeBody
