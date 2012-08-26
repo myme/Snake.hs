@@ -8,9 +8,17 @@ import Graphics.UI.WX
 startGUI :: SnakeConfig -> IO ()
 startGUI config = start $ gui config
 
+squareWidth, squareHeight :: Int
+squareWidth  = 10
+squareHeight = 10
+
 gridWidth, gridHeight :: Int
-gridWidth = 400
-gridHeight = 400
+gridWidth  = 40
+gridHeight = 40
+
+gridPxWidth, gridPxHeight :: Int
+gridPxWidth  = gridWidth * squareWidth
+gridPxHeight = gridHeight * squareHeight
 
 -- | GUI setup
 gui :: SnakeConfig -> IO ()
@@ -26,7 +34,7 @@ gui config = do
 
     -- timer mainFrame [interval := 20, on command := repaint gridPanel]
     set   mainFrame [layout := column 0
-                        [ minsize (sz gridWidth gridHeight) $ widget gridPanel
+                        [ minsize (sz gridPxWidth gridPxHeight) $ widget gridPanel
                         , row 0 [widget quitBtn, widget resetBtn]
                         ]
                     ]
@@ -39,7 +47,7 @@ paintMainPanel g dc _ = mapM_ (paintCell dc) $ enumerateCells g
 
 paintCell :: DC a -> (Coord, Cell) -> IO ()
 paintCell dc ((y, x), cell) = paintCell' cell
-    where coord = (y*10, x*10)
+    where coord = (y*squareHeight, x*squareWidth)
           paintCell' Empty     = return ()
           paintCell' Wall      = paintWallSegment dc coord
           paintCell' Apple     = paintApple dc coord
@@ -48,7 +56,7 @@ paintCell dc ((y, x), cell) = paintCell' cell
 paintWallSegment :: DC a -> Coord -> IO ()
 paintWallSegment dc coord = do
     let (y, x) = coord
-        r = rect (point x y) (sz 10 10)
+        r = rect (point x y) (sz squareWidth squareHeight)
 
     set dc [brushColor := black, brushKind := BrushSolid]
     drawRect dc r []
@@ -59,7 +67,7 @@ paintWallSegment dc coord = do
 paintApple :: DC a -> Coord -> IO ()
 paintApple dc coord = do
     let (y, x) = coord
-        r = rect (point x y) (sz 10 10)
+        r = rect (point x y) (sz squareWidth squareHeight)
 
     set dc [brushColor := red, brushKind := BrushSolid]
     drawRect dc r []
@@ -70,7 +78,7 @@ paintApple dc coord = do
 paintSnakePart :: DC a -> Coord -> IO ()
 paintSnakePart dc coord = do
     let (y, x) = coord
-        r = rect (point x y) (sz 10 10)
+        r = rect (point x y) (sz squareWidth squareHeight)
 
     set dc [brushColor := green, brushKind := BrushSolid]
     drawRect dc r []
