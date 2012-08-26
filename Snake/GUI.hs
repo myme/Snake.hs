@@ -4,11 +4,17 @@ import Snake.Core
 import Snake.IO
 
 import Graphics.UI.WX
+import Prelude hiding (Either(..))
 
 
 -- | Start the main GUI
 startGUI :: SnakeConfig -> IO ()
 startGUI config = start $ gui config "lvl1.txt"
+
+
+-- | Constant defining the update interval
+updateInterval :: Int
+updateInterval = 200
 
 
 -- | Constants defining the pixel width of each square
@@ -30,13 +36,33 @@ gui config level = do
         gridPxWidth  = gridWidth * squareWidth
         gridPxHeight = gridHeight * squareHeight
 
+    -- | Our lovely grid.
+    snakeGrid <- varCreate g'
+
+    -- | Main frame and panel/canvas.
     mainFrame <- frameFixed [text := "Snake"]
-    gridPanel <- panel mainFrame [on paint := paintMainPanel g']
+    gridPanel <- panel mainFrame [on paint := paintMainPanel snakeGrid]
+
+    -- | Key commands.
+    set gridPanel [ on (charKey 'w') := changeDirection Up snakeGrid
+                  , on upKey         := changeDirection Up snakeGrid
+
+                  , on (charKey 's') := changeDirection Down snakeGrid
+                  , on downKey       := changeDirection Down snakeGrid
+
+                  , on (charKey 'a') := changeDirection Left snakeGrid
+                  , on leftKey       := changeDirection Left snakeGrid
+
+                  , on (charKey 'd') := changeDirection Right snakeGrid
+                  , on rightKey      := changeDirection Right snakeGrid
+                  ]
 
     quitBtn  <- button mainFrame [text := "Quit", on command := close mainFrame]
     resetBtn <- button mainFrame [text := "Reset"]
 
-    -- timer mainFrame [interval := 20, on command := repaint gridPanel]
+    -- | Timer, initiating a redraw every 'updateInterval' milliseconds.
+    timer mainFrame [interval := updateInterval, on command := tick snakeGrid gridPanel]
+
     set mainFrame [layout := column 0
                       [ minsize (sz gridPxWidth gridPxHeight) $ widget gridPanel
                       , row 0 [widget quitBtn, widget resetBtn]
@@ -45,9 +71,26 @@ gui config level = do
 
     return ()
 
+
+-- | Performs a single tick of the application.
+tick :: Var Grid -> Panel () -> IO ()
+tick v p = do
+    varUpdate v moveSnake
+    repaint p
+
+
+changeDirection :: Direction -> Var Grid -> IO ()
+changeDirection d v = do
+    snakeGrid <- varGet v
+    let snake = gridSnake snakeGrid
+    varSet v snakeGrid { gridSnake = setSnakeDirection d snake }
+
+
 -- | Paint the main panel.
-paintMainPanel :: Grid -> DC a -> Rect -> IO ()
-paintMainPanel g dc _ = mapM_ (paintCell dc) $ enumerateCells g
+paintMainPanel :: Var Grid -> DC a -> Rect -> IO ()
+paintMainPanel v dc _ = do
+    g <- varGet v
+    mapM_ (paintCell dc) $ enumerateCells g
 
 
 -- | Paints an individual cell on the grid.

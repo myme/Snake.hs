@@ -15,7 +15,7 @@ import System.Random
 data Grid = Grid
           { gridDim :: Dimension
           , gridCells :: [Cell]
-          , snake :: Snake
+          , gridSnake :: Snake
           }
 
 type Dimension = (Int, Int) -- ^ (width, height)
@@ -42,7 +42,12 @@ data SnakeConfig = SnakeConfig { randomGen :: StdGen }
 --
 
 emptyGrid :: Dimension -> Grid
-emptyGrid d@(w, h) = Grid d (replicate (w * h) Empty) initialSnake
+emptyGrid d@(w, h) = Grid d (replicate (w * h) Empty) emptySnake
+
+
+emptySnake :: Snake
+emptySnake = Snake Right []
+
 
 addBorder :: Grid -> Grid
 addBorder g = g { gridCells = map fn (enumerateCells g) }
@@ -111,12 +116,50 @@ placeApple g r = (setCell coord Apple g, r')
 
 -- | Adds the snake to the grid.
 placeSnake :: Snake -> Grid -> Grid
-placeSnake s g = foldr (`setCell` SnakePart) g $ snakeBody s
+placeSnake s g = g' { gridSnake = s }
+    where g' = foldr (`setCell` SnakePart) g $ snakeBody s
 
 
--- | Moves the snake forwards
--- moveSnake :: Direction -> Grid -> Grid
--- moveSnake g
+-- | Sets the new direction the snake will travel in.
+setSnakeDirection :: Direction -> Snake -> Snake
+setSnakeDirection d s = s { snakeDir = d }
+
+
+-- | Moves the snake one step within the grid.
+--
+-- The next cell might be:
+--
+--  * Empty - Snake moves one step forward.
+--  * Wall  - Snake collides and dies.
+--  * Apple - Snake moves one step forward, eats apple and
+--            grows one cell in length (tail is not retracted).
+--  * Snake - Snake collides with itself and dies.
+moveSnake :: Grid -> Grid
+moveSnake g = newGrid { gridSnake = newSnake }
+
+    where snake = gridSnake g
+
+          (y, x) = head $ snakeBody snake
+
+          -- | The cell to be remove from the snake.
+          lastCell = last $ snakeBody snake
+
+          -- | The coordinates of the next cell.
+          nextCell = case snakeDir snake of
+                         Up    -> (y - 1, x)
+                         Down  -> (y + 1, x)
+                         Left  -> (y, x - 1)
+                         Right -> (y, x + 1)
+
+          -- | The snake after the move.
+          newSnake = snake { snakeBody = init $ nextCell : snakeBody snake }
+
+          -- | The grid after the move.
+          -- Add new snake squares and remove the old ones.
+          newGrid  = foldr ($) g
+                   [ setCell nextCell SnakePart
+                   , setCell lastCell Empty
+                   ]
 
 
 --------------------------------------------------
