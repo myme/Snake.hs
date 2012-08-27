@@ -15,7 +15,7 @@ startGUI gen level = start $ gui gen level
 
 -- | Constant defining the update interval
 updateInterval :: Int
-updateInterval = 200
+updateInterval = 100
 
 
 -- | Constants defining the pixel width of each square

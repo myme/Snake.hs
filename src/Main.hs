@@ -7,4 +7,4 @@ import System.Random
 main :: IO ()
 main = do
     gen <- newStdGen
-    startGUI gen "levels/lvl2.txt"
+    startGUI gen "levels/lvl1.txt"
