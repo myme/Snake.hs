@@ -1,7 +1,7 @@
 module Snake.Core where
 
 import Control.Monad (guard)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Tuple (swap)
 import Prelude hiding (Either(..))
 import System.Random
@@ -11,6 +11,11 @@ import System.Random
 --
 -- Datastructures
 --
+
+data SnakeState = SnakeState
+                { stateGrid :: Grid
+                , randomGen :: StdGen
+                }
 
 data Grid = Grid
           { gridDim :: Dimension
@@ -33,8 +38,6 @@ data Direction = Up | Down | Left | Right
 
 type Coord = (Int, Int) -- ^ (y, x)
 
-data SnakeConfig = SnakeConfig { randomGen :: StdGen }
-
 
 --------------------------------------------------
 --
@@ -42,7 +45,7 @@ data SnakeConfig = SnakeConfig { randomGen :: StdGen }
 --
 
 emptyGrid :: Dimension -> Grid
-emptyGrid d@(w, h) = Grid d (replicate (w * h) Empty) emptySnake
+emptyGrid d@(w, h) = Grid d (replicate (w * h) Empty) emptySnake 
 
 
 emptySnake :: Snake
@@ -134,53 +137,39 @@ setSnakeDirection d s = s { snakeDir = d }
 --  * Apple - Snake moves one step forward, eats apple and
 --            grows one cell in length (tail is not retracted).
 --  * Snake - Snake collides with itself and dies.
-moveSnake :: Grid -> Grid
-moveSnake g = newGrid { gridSnake = newSnake }
+tick :: SnakeState -> SnakeState
+tick (SnakeState oldGrid gen) = SnakeState (fromMaybe oldGrid newGrid) gen
 
-    where snake = gridSnake g
+    where (nextCoord, grownSnake) = growSnake $ gridSnake oldGrid
+          (lastCoord, movedSnake) = reduceTail grownSnake
 
-          -- | The cell to be remove from the snake.
+          grownGrid = (setCell nextCoord SnakePart oldGrid)   { gridSnake = grownSnake }
+          movedGrid = (setCell lastCoord Empty     grownGrid) { gridSnake = movedSnake }
+
+          newGrid = do
+              cellType <- getCell nextCoord oldGrid
+              case cellType of
+                  Wall      -> Nothing
+                  SnakePart -> Nothing
+                  Apple     -> Just grownGrid
+                  Empty     -> Just movedGrid
+
+
+growSnake :: Snake -> (Coord, Snake)
+growSnake snake = (nextCoord, snake { snakeBody = newBody })
+    where (y, x)    = head $ snakeBody snake
+          newBody   = nextCoord : snakeBody snake
+          nextCoord = case snakeDir snake of
+                          Up    -> (y - 1, x)
+                          Down  -> (y + 1, x)
+                          Left  -> (y, x - 1)
+                          Right -> (y, x + 1)
+
+
+reduceTail :: Snake -> (Coord, Snake)
+reduceTail snake = (lastCoord, snake { snakeBody = newBody })
+    where newBody   = init $ snakeBody snake
           lastCoord = last $ snakeBody snake
-
-          -- | The coordinates of the next cell.
-          nextCoord =
-              let (y, x) = head $ snakeBody snake
-                  (w, h) = gridDim g
-
-              in  case snakeDir snake of
-                      Up    -> let y' = y - 1
-                               in  if y' < 0
-                                       then (h - 1, x)
-                                       else (y - 1, x)
-                      Down  -> let y' = y + 1
-                               in  if y' >= h
-                                       then (0, x)
-                                       else (y + 1, x)
-                      Left  -> let x' = x - 1
-                               in  if x' < 0
-                                       then (y, w - 1)
-                                       else (y, x - 1)
-                      Right -> let x' = x + 1
-                               in  if x' >= w
-                                       then (y, 0)
-                                       else (y, x + 1)
-
-          -- | The snake after the move.
-          newSnake = case getCell nextCoord g of
-                         Nothing        -> snake
-                         Just Empty     -> snake { snakeBody = moveForward }
-                         Just Wall      -> snake
-                         Just Apple     -> snake { snakeBody = grow }
-                         Just SnakePart -> snake
-              where grow = nextCoord : snakeBody snake
-                    moveForward = init grow
-
-          -- | The grid after the move.
-          -- Add new snake squares and remove the old ones.
-          newGrid  = foldr ($) g
-                   [ setCell nextCoord SnakePart
-                   , setCell lastCoord Empty
-                   ]
 
 
 --------------------------------------------------

@@ -7,4 +7,4 @@ import System.Random
 main :: IO ()
 main = do
     gen <- newStdGen
-    startGUI SnakeConfig { randomGen = gen }
+    startGUI gen "levels/lvl2.txt"

@@ -5,11 +5,12 @@ import Snake.IO
 
 import Graphics.UI.WX
 import Prelude hiding (Either(..))
+import System.Random
 
 
 -- | Start the main GUI
-startGUI :: SnakeConfig -> IO ()
-startGUI config = start $ gui config "levels/lvl1.txt"
+startGUI :: StdGen -> FilePath -> IO ()
+startGUI gen level = start $ gui gen level
 
 
 -- | Constant defining the update interval
@@ -25,43 +26,42 @@ squareHeight = 10
 
 
 -- | GUI setup
-gui :: SnakeConfig -> FilePath -> IO ()
-gui config level = do
+gui :: StdGen -> FilePath -> IO ()
+gui gen level = do
 
     g <- loadGrid level
 
-    let gen     = randomGen config
-        (g', _) = placeApple (placeSnake initialSnake g) gen
+    let (g', gen') = placeApple (placeSnake initialSnake g) gen
         (gridWidth, gridHeight) = gridDim g
         gridPxWidth  = gridWidth * squareWidth
         gridPxHeight = gridHeight * squareHeight
 
     -- | Our lovely grid.
-    snakeGrid <- varCreate g'
+    snakeState <- varCreate $ SnakeState g' gen'
 
     -- | Main frame and panel/canvas.
     mainFrame <- frameFixed [text := "Snake"]
-    gridPanel <- panel mainFrame [on paint := paintMainPanel snakeGrid]
+    gridPanel <- panel mainFrame [on paint := paintMainPanel snakeState]
 
     -- | Key commands.
-    set gridPanel [ on (charKey 'w') := changeDirection Up snakeGrid
-                  , on upKey         := changeDirection Up snakeGrid
+    set gridPanel [ on (charKey 'w') := changeDirection Up snakeState
+                  , on upKey         := changeDirection Up snakeState
 
-                  , on (charKey 's') := changeDirection Down snakeGrid
-                  , on downKey       := changeDirection Down snakeGrid
+                  , on (charKey 's') := changeDirection Down snakeState
+                  , on downKey       := changeDirection Down snakeState
 
-                  , on (charKey 'a') := changeDirection Left snakeGrid
-                  , on leftKey       := changeDirection Left snakeGrid
+                  , on (charKey 'a') := changeDirection Left snakeState
+                  , on leftKey       := changeDirection Left snakeState
 
-                  , on (charKey 'd') := changeDirection Right snakeGrid
-                  , on rightKey      := changeDirection Right snakeGrid
+                  , on (charKey 'd') := changeDirection Right snakeState
+                  , on rightKey      := changeDirection Right snakeState
                   ]
 
     quitBtn  <- button mainFrame [text := "Quit", on command := close mainFrame]
     resetBtn <- button mainFrame [text := "Reset"]
 
     -- | Timer, initiating a redraw every 'updateInterval' milliseconds.
-    timer mainFrame [interval := updateInterval, on command := tick snakeGrid gridPanel]
+    timer mainFrame [interval := updateInterval, on command := guiTick snakeState gridPanel]
 
     set mainFrame [layout := column 0
                       [ minsize (sz gridPxWidth gridPxHeight) $ widget gridPanel
@@ -73,23 +73,25 @@ gui config level = do
 
 
 -- | Performs a single tick of the application.
-tick :: Var Grid -> Panel () -> IO ()
-tick v p = do
-    varUpdate v moveSnake
+guiTick :: Var SnakeState -> Panel () -> IO ()
+guiTick v p = do
+    varUpdate v tick
     repaint p
 
 
-changeDirection :: Direction -> Var Grid -> IO ()
+changeDirection :: Direction -> Var SnakeState -> IO ()
 changeDirection d v = do
-    snakeGrid <- varGet v
-    let snake = gridSnake snakeGrid
-    varSet v snakeGrid { gridSnake = setSnakeDirection d snake }
+    snakeState <- varGet v
+    let snakeGrid = stateGrid snakeState
+        snake = gridSnake snakeGrid
+    varSet v snakeState { stateGrid = snakeGrid { gridSnake = setSnakeDirection d snake } }
 
 
 -- | Paint the main panel.
-paintMainPanel :: Var Grid -> DC a -> Rect -> IO ()
+paintMainPanel :: Var SnakeState -> DC a -> Rect -> IO ()
 paintMainPanel v dc _ = do
-    g <- varGet v
+    snakeState <- varGet v
+    let g = stateGrid snakeState
     mapM_ (paintCell dc) $ enumerateCells g
 
 
