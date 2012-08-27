@@ -146,8 +146,7 @@ tick (SnakeState oldGrid gen) = fromMaybe (SnakeState oldGrid gen) newState
           nextCoord = head $ snakeBody grownSnake
           grownGrid = (setCell nextCoord SnakePart oldGrid)   { gridSnake = grownSnake }
           movedGrid = (setCell lastCoord Empty     grownGrid) { gridSnake = movedSnake }
-
-          newState = do
+          newState  = do
               cellType <- getCell nextCoord oldGrid
               case cellType of
                   Wall      -> Nothing
@@ -185,6 +184,7 @@ growSnake snake = snake { snakeBody = newBody }
 
 
 -- | Reduces/pops off the last cell of the snake (its tail).
+-- Returns a tuple of the removed coordinate and the updated snake.
 reduceTail :: Snake -> (Coord, Snake)
 reduceTail snake = (lastCoord, snake { snakeBody = newBody })
     where newBody   = init $ snakeBody snake
