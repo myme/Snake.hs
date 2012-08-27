@@ -140,9 +140,10 @@ setSnakeDirection d s = s { snakeDir = d }
 tick :: SnakeState -> SnakeState
 tick (SnakeState oldGrid gen) = fromMaybe (SnakeState oldGrid gen) newState
 
-    where (nextCoord, grownSnake) = growSnake $ gridSnake oldGrid
+    where dim        = gridDim oldGrid
+          grownSnake = wrapSnake dim . growSnake $ gridSnake oldGrid
           (lastCoord, movedSnake) = reduceTail grownSnake
-
+          nextCoord = head $ snakeBody grownSnake
           grownGrid = (setCell nextCoord SnakePart oldGrid)   { gridSnake = grownSnake }
           movedGrid = (setCell lastCoord Empty     grownGrid) { gridSnake = movedSnake }
 
@@ -155,8 +156,25 @@ tick (SnakeState oldGrid gen) = fromMaybe (SnakeState oldGrid gen) newState
                   Empty     -> Just $ SnakeState movedGrid gen
 
 
-growSnake :: Snake -> (Coord, Snake)
-growSnake snake = (nextCoord, snake { snakeBody = newBody })
+-- | Wraps the snake to the other side of the grid if
+-- it exceeds the grid dimensions.
+wrapSnake :: Dimension -> Snake -> Snake
+wrapSnake (w, h) snake = snake { snakeBody = newBody }
+    where oldBody   = snakeBody snake
+          newBody   = wrapCoord (head oldBody) : tail oldBody
+          wrapCoord (y, x)
+              | y  < 0    = wrapCoord (h - 1, x)
+              | y >= h    = wrapCoord (0, x)
+              | x  < 0    = wrapCoord (y, w - 1)
+              | x >= w    = wrapCoord (y, 0)
+              | otherwise = (y, x)
+
+
+-- | Grows the snake by one cell in its current direction
+-- of movement. The caller will have to check if the new
+-- location is in fact valid.
+growSnake :: Snake -> Snake
+growSnake snake = snake { snakeBody = newBody }
     where (y, x)    = head $ snakeBody snake
           newBody   = nextCoord : snakeBody snake
           nextCoord = case snakeDir snake of
@@ -166,6 +184,7 @@ growSnake snake = (nextCoord, snake { snakeBody = newBody })
                           Right -> (y, x + 1)
 
 
+-- | Reduces/pops off the last cell of the snake (its tail).
 reduceTail :: Snake -> (Coord, Snake)
 reduceTail snake = (lastCoord, snake { snakeBody = newBody })
     where newBody   = init $ snakeBody snake
