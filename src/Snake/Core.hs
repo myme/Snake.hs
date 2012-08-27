@@ -161,12 +161,12 @@ wrapSnake :: Dimension -> Snake -> Snake
 wrapSnake (w, h) snake = snake { snakeBody = newBody }
     where oldBody   = snakeBody snake
           newBody   = wrapCoord (head oldBody) : tail oldBody
-          wrapCoord (y, x)
+          wrapCoord coord@(y, x)
               | y  < 0    = wrapCoord (h - 1, x)
               | y >= h    = wrapCoord (0, x)
               | x  < 0    = wrapCoord (y, w - 1)
               | x >= w    = wrapCoord (y, 0)
-              | otherwise = (y, x)
+              | otherwise = coord
 
 
 -- | Grows the snake by one cell in its current direction
