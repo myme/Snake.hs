@@ -34,7 +34,7 @@ data Snake = Snake
            } deriving (Show)
 
 data Direction = Up | Down | Left | Right
-               deriving (Show)
+               deriving (Show, Eq)
 
 type Coord = (Int, Int) -- ^ (y, x)
 
@@ -124,8 +124,16 @@ placeSnake s g = g' { gridSnake = s }
 
 
 -- | Sets the new direction the snake will travel in.
+-- Returns the original snake if the new direction is not
+-- orthogonal to the current direction the snake is traveling
+-- in. E.g. an upwards moving snake cannot move backwards, etc.
 setSnakeDirection :: Direction -> Snake -> Snake
-setSnakeDirection d s = s { snakeDir = d }
+setSnakeDirection d s = s { snakeDir = d' }
+    where d' = case snakeDir s of
+                   Up    -> if d == Down  then Up    else d
+                   Down  -> if d == Up    then Down  else d
+                   Left  -> if d == Right then Left  else d
+                   Right -> if d == Left  then Right else d
 
 
 -- | Moves the snake one step within the grid.
