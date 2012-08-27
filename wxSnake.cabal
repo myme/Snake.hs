@@ -17,5 +17,6 @@ cabal-version:       >=1.8
 
 executable snake
   main-is:             Main.hs
+  hs-source-dirs:      src
   -- other-modules:       
   build-depends:       base ==4.5.*, random ==1.0.*, wx ==0.13.*
