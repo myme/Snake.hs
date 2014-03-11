@@ -146,8 +146,7 @@ setSnakeDirection d s = s { snakeDir = d' }
 --            grows one cell in length (tail is not retracted).
 --  * Snake - Snake collides with itself and dies.
 tick :: SnakeState -> SnakeState
-tick (SnakeState oldGrid gen) = fromMaybe (SnakeState oldGrid gen) newState
-
+tick oldState@(SnakeState oldGrid gen) = fromMaybe oldState newState
     where dim        = gridDim oldGrid
           grownSnake = wrapSnake dim . growSnake $ gridSnake oldGrid
           (lastCoord, movedSnake) = reduceTail grownSnake
