@@ -13,10 +13,13 @@ maintainer:          myme@myme.no
 -- copyright:           
 category:            Game
 build-type:          Simple
-cabal-version:       >=1.8
+cabal-version:       >= 1.18
 
 executable snake
   main-is:             Main.hs
   hs-source-dirs:      src
   -- other-modules:       
-  build-depends:       base ==4.6.*, random ==1.0.*, wx ==0.90.*
+  build-depends:       base ==4.6.*,
+                       cabal-macosx,
+                       random ==1.0.*,
+                       wx ==0.90.*
