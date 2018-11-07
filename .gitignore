@@ -3,3 +3,4 @@
 *.o
 /snake
 /dist
+.stack-work
